@@ -56,12 +56,16 @@ spec:
         command:
         - /metrics-server
         - --metric-resolution=30s
+
+        # 若不能做TLS加密认证，使用不安全的通信也可以
         - --kubelet-insecure-tls
+
         - --kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP
         # These are needed for GKE, which doesn't support secure communication yet.
         # Remove these lines for non-GKE clusters, and when GKE supports token-based auth.
-        #- --kubelet-port=10255
         #- --deprecated-kubelet-completely-insecure=true
+        # 注释掉这一行，因为10255为kubelet默认的http端口，在kubeadm安装时候已经把http的端口禁用了 可用的应该是10250
+        #- --kubelet-port=10255
 
         ports:
         - containerPort: 443
@@ -92,10 +96,7 @@ spec:
         command:
           - /pod_nanny
           - --config-dir=/etc/config
-          - --cpu=100m
           - --extra-cpu=0.5m
-          - --memory=150Mi
-          - --extra-memory=50Mi
           - --threshold=5
           - --deployment=metrics-server-v0.3.6
           - --container=metrics-server
@@ -103,7 +104,20 @@ spec:
           - --estimator=exponential
           # Specifies the smallest cluster (defined in number of nodes)
           # resources will be scaled to.
-          #- --minClusterSize={{ metrics_server_min_cluster_size }}
+          # - --minClusterSize={{ metrics_server_min_cluster_size }}  # 这里字面意思似乎是 设置启动几组Metrics-server,选项说明提示默认是16组. 但这我注释掉了。
+
+          # - --cpu={{ base_metrics_server_cpu }}
+          # 设置metrics-server基本运行可用CPU毫核数量，测试设置100m
+          - --cpu=100m
+
+          # - --memory={{ base_metrics_server_memory }}
+          # 分配给metrics-server基本运行的内存大小, 测试设置 150Mi
+          - --memory=150Mi
+
+          # - --extra-memory={{ metrics_server_memory_per_node }}Mi 
+          # 每个节点上的metrics-server额外分配内存大小，测试50Mi
+          - --extra-memory=50Mi
+
       volumes:
         - name: metrics-server-config-volume
           configMap:

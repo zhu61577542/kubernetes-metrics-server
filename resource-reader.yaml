@@ -12,6 +12,7 @@ rules:
   - pods
   - nodes
   - namespaces
+  # 添加对nodes 状态获取的权限
   - nodes/stats
   verbs:
   - get
